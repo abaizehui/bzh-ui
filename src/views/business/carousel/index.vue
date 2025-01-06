@@ -48,13 +48,17 @@
 
     <el-table v-loading="loading" :data="carouselList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="图片" align="center" prop="imageUrl" />
-      <el-table-column label="排序顺序" align="center" prop="sortOrder" />
-      <el-table-column label="是否启用状态1：启用，2：停用" align="center" prop="isActive">
+      <el-table-column label="图片" align="center" prop="imageUrl">
+        <template #default="scope">
+          <img :src="scope.row.imageUrl" alt="图片" style="max-width: 100px; max-height: 100px;">
+        </template>
+      </el-table-column>
+      <el-table-column label="是否启用" align="center" prop="isActive">
         <template slot-scope="scope">
           <dict-tag :options="dict.type.bzh_yes_no" :value="scope.row.isActive"/>
         </template>
       </el-table-column>
+      <el-table-column label="排序顺序" align="center" prop="sortOrder" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -87,7 +91,7 @@
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="图片" prop="imageUrl">
-          <el-input v-model="form.imageUrl" placeholder="请输入图片" />
+          <image-upload v-model="form.imageUrl" :limit="1"/>
         </el-form-item>
         <el-form-item label="排序顺序" prop="sortOrder">
           <el-input v-model="form.sortOrder" placeholder="请输入排序顺序" />
@@ -96,9 +100,6 @@
           <el-select v-model="form.isActive" placeholder="请选择是否启用">
             <el-option v-for="dict in dict.type.bzh_yes_no" :key="dict.value" :label="dict.label" :value="dict.value"></el-option>
           </el-select>
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -238,7 +239,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$modal.confirm('是否确认删除轮播图编号为"' + ids + '"的数据项？').then(function() {
+      this.$modal.confirm('是否确认删除').then(function() {
         return delCarousel(ids);
       }).then(() => {
         this.getList();
