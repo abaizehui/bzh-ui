@@ -42,3 +42,11 @@ export function delCarousel(id) {
     method: 'delete'
   })
 }
+
+// 查询所有门店列表
+export function listAllStore() {
+  return request({
+    url: '/business/store/listAll',
+    method: 'get',
+  })
+}

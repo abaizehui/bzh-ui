@@ -9,9 +9,9 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="联系电话" prop="phone">
+      <el-form-item label="联系电话" prop="tel">
         <el-input
-          v-model="queryParams.phone"
+          v-model="queryParams.tel"
           placeholder="请输入联系电话"
           clearable
           @keyup.enter.native="handleQuery"
@@ -33,17 +33,6 @@
           @click="handleAdd"
           v-hasPermi="['business:store:add']"
         >新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['business:store:edit']"
-        >修改</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -71,17 +60,9 @@
 
     <el-table v-loading="loading" :data="storeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="主键" align="center" prop="id" />
       <el-table-column label="门店名称" align="center" prop="storeName" />
-      <el-table-column label="详细地址" align="center" prop="address" />
-      <el-table-column label="纬度" align="center" prop="latitude" />
-      <el-table-column label="经度" align="center" prop="longitude" />
-      <el-table-column label="联系电话" align="center" prop="phone" />
-      <el-table-column label="更新时间" align="center" prop="updateTime" width="180">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.updateTime, '{y}-{m}-{d}') }}</span>
-        </template>
-      </el-table-column>
+      <el-table-column label="门店地址" align="center" prop="address" />
+      <el-table-column label="联系电话" align="center" prop="tel" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -101,7 +82,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -116,20 +97,11 @@
         <el-form-item label="门店名称" prop="storeName">
           <el-input v-model="form.storeName" placeholder="请输入门店名称" />
         </el-form-item>
-        <el-form-item label="详细地址" prop="address">
-          <el-input v-model="form.address" type="textarea" placeholder="请输入内容" />
+        <el-form-item label="门店地址" prop="address">
+          <el-input v-model="form.address" placeholder="请输入内容" />
         </el-form-item>
-        <el-form-item label="纬度" prop="latitude">
-          <el-input v-model="form.latitude" placeholder="请输入纬度" />
-        </el-form-item>
-        <el-form-item label="经度" prop="longitude">
-          <el-input v-model="form.longitude" placeholder="请输入经度" />
-        </el-form-item>
-        <el-form-item label="联系电话" prop="phone">
-          <el-input v-model="form.phone" placeholder="请输入联系电话" />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+        <el-form-item label="联系电话" prop="tel">
+          <el-input v-model="form.tel" placeholder="请输入联系电话" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -170,7 +142,7 @@ export default {
         pageNum: 1,
         pageSize: 10,
         storeName: null,
-        phone: null,
+        tel: null,
       },
       // 表单参数
       form: {},
@@ -179,7 +151,10 @@ export default {
         storeName: [
           { required: true, message: "门店名称不能为空", trigger: "blur" }
         ],
-        phone: [
+        address: [
+          { required: true, message: "门店地址不能为空", trigger: "blur" }
+        ],
+        tel: [
           { required: true, message: "联系电话不能为空", trigger: "blur" }
         ],
       }
@@ -209,9 +184,7 @@ export default {
         id: null,
         storeName: null,
         address: null,
-        latitude: null,
-        longitude: null,
-        phone: null,
+        tel: null,
         createBy: null,
         createTime: null,
         updateBy: null,

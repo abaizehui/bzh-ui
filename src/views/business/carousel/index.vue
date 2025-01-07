@@ -13,17 +13,6 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['business:carousel:edit']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
           type="danger"
           plain
           icon="el-icon-delete"
@@ -33,32 +22,23 @@
           v-hasPermi="['business:carousel:remove']"
         >删除</el-button>
       </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="warning"
-          plain
-          icon="el-icon-download"
-          size="mini"
-          @click="handleExport"
-          v-hasPermi="['business:carousel:export']"
-        >导出</el-button>
-      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="carouselList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
+      <el-table-column label="门店" align="center" prop="storeName" />
       <el-table-column label="图片" align="center" prop="imageUrl">
         <template #default="scope">
           <img :src="scope.row.imageUrl" alt="图片" style="max-width: 100px; max-height: 100px;">
         </template>
       </el-table-column>
-      <el-table-column label="是否启用" align="center" prop="isActive">
+      <el-table-column label="状态" align="center" prop="status">
         <template slot-scope="scope">
-          <dict-tag :options="dict.type.bzh_yes_no" :value="scope.row.isActive"/>
+          <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/>
         </template>
       </el-table-column>
-      <el-table-column label="排序顺序" align="center" prop="sortOrder" />
+      <el-table-column label="排序" align="center" prop="sortOrder" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -90,16 +70,25 @@
     <!-- 添加或修改轮播图对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+        <el-form-item label="门店" prop="storeId">
+          <el-select v-model="form.storeId" placeholder="请选择门店">
+            <el-option v-for="item in storeOptions" :key="item.id" :label="item.storeName" :value="item.id" ></el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="图片" prop="imageUrl">
           <image-upload v-model="form.imageUrl" :limit="1"/>
         </el-form-item>
-        <el-form-item label="排序顺序" prop="sortOrder">
-          <el-input v-model="form.sortOrder" placeholder="请输入排序顺序" />
+        <el-form-item label="排序" prop="sortOrder">
+          <el-input-number v-model="form.sortOrder" controls-position="right" :min="0" />
         </el-form-item>
-        <el-form-item label="启用状态">
-          <el-select v-model="form.isActive" placeholder="请选择是否启用">
-            <el-option v-for="dict in dict.type.bzh_yes_no" :key="dict.value" :label="dict.label" :value="dict.value"></el-option>
-          </el-select>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio
+              v-for="dict in dict.type.sys_normal_disable"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -111,11 +100,14 @@
 </template>
 
 <script>
-import { listCarousel, getCarousel, delCarousel, addCarousel, updateCarousel } from "@/api/business/carousel";
+import { listCarousel, getCarousel, delCarousel, addCarousel, updateCarousel,listAllStore} from "@/api/business/carousel";
+import { getUser } from '@/api/system/user'
+
 
 export default {
   name: "Carousel",
-  dicts: ['bzh_yes_no'],
+  dicts: ['sys_normal_disable'],
+
   data() {
     return {
       // 遮罩层
@@ -132,6 +124,9 @@ export default {
       total: 0,
       // 轮播图表格数据
       carouselList: [],
+      //门店列表
+      storeOptions: [],
+
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -148,6 +143,12 @@ export default {
         imageUrl: [
           { required: true, message: "图片不能为空", trigger: "blur" }
         ],
+        storeId: [
+          { required: true, message: "门店不能为空", trigger: "blur" }
+        ],
+        sortOrder: [
+          { required: true, message: "排序不能为空", trigger: "blur" }
+        ]
       }
     };
   },
@@ -173,9 +174,10 @@ export default {
     reset() {
       this.form = {
         id: null,
+        storeId: null,
         imageUrl: null,
-        sortOrder: null,
-        isActive: null,
+        sortOrder: 0,
+        status: null,
         createBy: null,
         createTime: null,
         updateBy: null,
@@ -203,17 +205,23 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
-      this.open = true;
-      this.title = "添加轮播图";
+      listAllStore().then(response => {
+        this.storeOptions = response.data;
+        this.open = true;
+        this.title = "添加轮播图";
+      });
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
       const id = row.id || this.ids
-      getCarousel(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改轮播图";
+      listAllStore().then(response => {
+        this.storeOptions = response.data;
+        getCarousel(id).then(response => {
+          this.form = response.data;
+          this.open = true;
+          this.title = "修改轮播图";
+        });
       });
     },
     /** 提交按钮 */
@@ -251,7 +259,7 @@ export default {
       this.download('business/carousel/export', {
         ...this.queryParams
       }, `carousel_${new Date().getTime()}.xlsx`)
-    }
+    },
   }
 };
 </script>
