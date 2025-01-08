@@ -63,6 +63,11 @@
       <el-table-column label="门店名称" align="center" prop="storeName" />
       <el-table-column label="门店地址" align="center" prop="address" />
       <el-table-column label="联系电话" align="center" prop="tel" />
+      <el-table-column label="状态" align="center" prop="status">
+        <template slot-scope="scope">
+          <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -103,6 +108,15 @@
         <el-form-item label="联系电话" prop="tel">
           <el-input v-model="form.tel" placeholder="请输入联系电话" />
         </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio
+              v-for="dict in dict.type.sys_normal_disable"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -117,6 +131,7 @@ import { listStore, getStore, delStore, addStore, updateStore } from "@/api/busi
 
 export default {
   name: "Store",
+  dicts: ['sys_normal_disable'],
   data() {
     return {
       // 遮罩层
@@ -185,6 +200,7 @@ export default {
         storeName: null,
         address: null,
         tel: null,
+        status: null,
         createBy: null,
         createTime: null,
         updateBy: null,

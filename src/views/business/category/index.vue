@@ -1,21 +1,23 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="类目名称" prop="name">
+      <el-form-item label="门店" prop="storeId">
+        <el-select v-model="queryParams.storeId" placeholder="请选择门店">
+          <el-option v-for="item in storeOptions" :key="item.id" :label="item.storeName" :value="item.id" ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="类目名称" prop="categoryName">
         <el-input
-          v-model="queryParams.name"
+          v-model="queryParams.categoryName"
           placeholder="请输入类目名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="是否启用状态1：启用，0：停用" prop="isActive">
-        <el-input
-          v-model="queryParams.isActive"
-          placeholder="请输入是否启用状态1：启用，0：停用"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+      <el-form-item label="状态" prop="status">
+        <el-select v-model="queryParams.status" placeholder="用户状态" clearable style="width: 240px">
+          <el-option v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value" />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
@@ -33,17 +35,6 @@
           @click="handleAdd"
           v-hasPermi="['business:category:add']"
         >新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['business:category:edit']"
-        >修改</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -71,18 +62,19 @@
 
     <el-table v-loading="loading" :data="categoryList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="主键" align="center" prop="id" />
-      <el-table-column label="类目名称" align="center" prop="name" />
-      <el-table-column label="父类目ID" align="center" prop="parentId" />
-      <el-table-column label="类目层级" align="center" prop="level" />
-      <el-table-column label="排序顺序" align="center" prop="sortOrder" />
-      <el-table-column label="类目图标URL" align="center" prop="imageUrl" />
-      <el-table-column label="是否启用状态1：启用，0：停用" align="center" prop="isActive" />
-      <el-table-column label="更新时间" align="center" prop="updateTime" width="180">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.updateTime, '{y}-{m}-{d}') }}</span>
+      <el-table-column label="门店" align="center" prop="storeName" />
+      <el-table-column label="类目名称" align="center" prop="categoryName" />
+      <el-table-column label="图标" align="center" prop="imageUrl">
+        <template #default="scope">
+          <img :src="scope.row.imageUrl" alt="图标" style="max-width: 100px; max-height: 100px;">
         </template>
       </el-table-column>
+      <el-table-column label="状态" align="center" prop="status">
+        <template slot-scope="scope">
+          <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="排序" align="center" prop="sortOrder" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -102,7 +94,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -114,26 +106,28 @@
     <!-- 添加或修改产品类目对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="类目名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入类目名称" />
+        <el-form-item label="门店" prop="storeId">
+          <el-select v-model="form.storeId" placeholder="请选择门店">
+            <el-option v-for="item in storeOptions" :key="item.id" :label="item.storeName" :value="item.id" ></el-option>
+          </el-select>
         </el-form-item>
-        <el-form-item label="父类目ID" prop="parentId">
-          <el-input v-model="form.parentId" placeholder="请输入父类目ID" />
+        <el-form-item label="类目名称" prop="categoryName">
+          <el-input v-model="form.categoryName" placeholder="请输入类目名称" />
         </el-form-item>
-        <el-form-item label="类目层级" prop="level">
-          <el-input v-model="form.level" placeholder="请输入类目层级" />
+        <el-form-item label="图标" prop="imageUrl">
+          <image-upload v-model="form.imageUrl" :limit="1"/>
         </el-form-item>
-        <el-form-item label="排序顺序" prop="sortOrder">
-          <el-input v-model="form.sortOrder" placeholder="请输入排序顺序" />
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio
+              v-for="dict in dict.type.sys_normal_disable"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
         </el-form-item>
-        <el-form-item label="类目图标URL" prop="imageUrl">
-          <el-input v-model="form.imageUrl" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-        <el-form-item label="是否启用状态1：启用，0：停用" prop="isActive">
-          <el-input v-model="form.isActive" placeholder="请输入是否启用状态1：启用，0：停用" />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+        <el-form-item label="排序" prop="sortOrder">
+          <el-input-number v-model="form.sortOrder" controls-position="right" :min="0" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -146,9 +140,11 @@
 
 <script>
 import { listCategory, getCategory, delCategory, addCategory, updateCategory } from "@/api/business/category";
+import { listAllStore } from '@/api/business/carousel'
 
 export default {
   name: "Category",
+  dicts: ['sys_normal_disable'],
   data() {
     return {
       // 遮罩层
@@ -165,6 +161,8 @@ export default {
       total: 0,
       // 产品类目表格数据
       categoryList: [],
+      //门店列表
+      storeOptions: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -173,21 +171,25 @@ export default {
       queryParams: {
         pageNum: 1,
         pageSize: 10,
-        name: null,
-        isActive: null,
+        categoryName: null,
+        status: null,
       },
       // 表单参数
       form: {},
       // 表单校验
       rules: {
-        name: [
+        categoryName: [
           { required: true, message: "类目名称不能为空", trigger: "blur" }
+        ],
+        storeId: [
+          { required: true, message: "门店不能为空", trigger: "blur" }
         ],
       }
     };
   },
   created() {
     this.getList();
+    this.getListAllStore();
   },
   methods: {
     /** 查询产品类目列表 */
@@ -199,6 +201,14 @@ export default {
         this.loading = false;
       });
     },
+
+    /** 查询门店列表 */
+    getListAllStore() {
+      this.loading = true;
+      listAllStore().then(response => {
+        this.storeOptions = response.data;
+      });
+    },
     // 取消按钮
     cancel() {
       this.open = false;
@@ -208,12 +218,11 @@ export default {
     reset() {
       this.form = {
         id: null,
-        name: null,
-        parentId: null,
-        level: null,
+        storeId: null,
+        categoryName: null,
         sortOrder: null,
         imageUrl: null,
-        isActive: null,
+        status: null,
         createBy: null,
         createTime: null,
         updateBy: null,
@@ -241,17 +250,23 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
-      this.open = true;
-      this.title = "添加产品类目";
+      listAllStore().then(response => {
+        this.storeOptions = response.data;
+        this.open = true;
+        this.title = "添加产品类目";
+      });
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
       const id = row.id || this.ids
-      getCategory(id).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改产品类目";
+      listAllStore().then(response => {
+        this.storeOptions = response.data;
+        getCategory(id).then(response => {
+          this.form = response.data;
+          this.open = true;
+          this.title = "修改产品类目";
+        });
       });
     },
     /** 提交按钮 */
@@ -277,7 +292,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$modal.confirm('是否确认删除产品类目编号为"' + ids + '"的数据项？').then(function() {
+      this.$modal.confirm('是否确认删除').then(function() {
         return delCategory(ids);
       }).then(() => {
         this.getList();

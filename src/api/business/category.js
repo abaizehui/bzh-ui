@@ -42,3 +42,12 @@ export function delCategory(id) {
     method: 'delete'
   })
 }
+
+
+// 查询所有产品类目列表
+export function listAllCategory() {
+  return request({
+    url: '/business/category/listAll',
+    method: 'get',
+  })
+}

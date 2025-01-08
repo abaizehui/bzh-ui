@@ -90,7 +90,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -195,6 +195,7 @@ export default {
         productId: null,
         paramName: null,
         paramValue: null,
+
         createBy: null,
         createTime: null,
         updateBy: null,

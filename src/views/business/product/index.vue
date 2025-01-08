@@ -1,46 +1,33 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="所属类目ID" prop="categoryId">
-        <el-input
-          v-model="queryParams.categoryId"
-          placeholder="请输入所属类目ID"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+      <el-form-item label="门店" prop="storeId">
+        <el-select v-model="queryParams.storeId" placeholder="请选择门店">
+          <el-option v-for="item in storeOptions" :key="item.id" :label="item.storeName" :value="item.id" ></el-option>
+        </el-select>
       </el-form-item>
-      <el-form-item label="门店ID" prop="storeId">
-        <el-input
-          v-model="queryParams.storeId"
-          placeholder="请输入门店ID"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+
+      <el-form-item label="产品类目" prop="categoryId">
+        <el-select v-model="queryParams.categoryId" placeholder="请选择产品类目">
+          <el-option v-for="item in categoryOptions" :key="item.id" :label="item.categoryName" :value="item.id" ></el-option>
+        </el-select>
       </el-form-item>
-      <el-form-item label="商品名称" prop="name">
+
+      <el-form-item label="商品名称" prop="productName">
         <el-input
-          v-model="queryParams.name"
+          v-model="queryParams.productName"
           placeholder="请输入商品名称"
           clearable
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="是否首页推荐1：推，0：不推" prop="isRecommend">
-        <el-input
-          v-model="queryParams.isRecommend"
-          placeholder="请输入是否首页推荐1：推，0：不推"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
+
+      <el-form-item label="状态" prop="status">
+        <el-select v-model="queryParams.status" placeholder="用户状态" clearable style="width: 240px">
+          <el-option v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value" />
+        </el-select>
       </el-form-item>
-      <el-form-item label="是否启用状态1：启用，0：停用" prop="isActive">
-        <el-input
-          v-model="queryParams.isActive"
-          placeholder="请输入是否启用状态1：启用，0：停用"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
+
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -95,28 +82,30 @@
 
     <el-table v-loading="loading" :data="productList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="主键" align="center" prop="id" />
-      <el-table-column label="所属类目ID" align="center" prop="categoryId" />
-      <el-table-column label="门店ID" align="center" prop="storeId" />
-      <el-table-column label="商品名称" align="center" prop="name" />
-      <el-table-column label="商品价格" align="center" prop="price" />
-      <el-table-column label="是否首页推荐1：推，0：不推" align="center" prop="isRecommend" />
-      <el-table-column label="是否启用状态1：启用，0：停用" align="center" prop="isActive" />
-      <el-table-column label="商品图片URL" align="center" prop="imageUrl" />
-      <el-table-column label="更新时间" align="center" prop="updateTime" width="180">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.updateTime, '{y}-{m}-{d}') }}</span>
+      <el-table-column label="门店" align="center" prop="storeName" />
+      <el-table-column label="产品类目" align="center" prop="categoryName" />
+      <el-table-column label="商品名称" align="center" prop="productName" />
+      <el-table-column label="商品价格" align="center" prop="productPrice" />
+      <el-table-column label="首页图片" align="center" prop="imageUrl">
+        <template #default="scope">
+          <img :src="scope.row.imageUrl" alt="图标" style="max-width: 100px; max-height: 100px;">
         </template>
       </el-table-column>
+      <el-table-column label="状态" align="center" prop="status">
+        <template slot-scope="scope">
+          <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="排序" align="center" prop="sortOrder" />
+
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
             size="mini"
             type="text"
             icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
-            v-hasPermi="['business:product:edit']"
-          >修改</el-button>
+            @click="handleProductParam(scope.row.id)"
+          >商品参数</el-button>
           <el-button
             size="mini"
             type="text"
@@ -127,7 +116,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -139,29 +128,36 @@
     <!-- 添加或修改商品对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="所属类目ID" prop="categoryId">
-          <el-input v-model="form.categoryId" placeholder="请输入所属类目ID" />
+        <el-form-item label="门店" prop="storeId">
+          <el-select v-model="form.storeId" placeholder="请选择门店">
+            <el-option v-for="item in storeOptions" :key="item.id" :label="item.storeName" :value="item.id" ></el-option>
+          </el-select>
         </el-form-item>
-        <el-form-item label="门店ID" prop="storeId">
-          <el-input v-model="form.storeId" placeholder="请输入门店ID" />
+        <el-form-item label="产品类目" prop="categoryId">
+          <el-select v-model="form.categoryId" placeholder="请选择产品类目">
+            <el-option v-for="item in categoryOptions" :key="item.id" :label="item.categoryName" :value="item.id" ></el-option>
+          </el-select>
         </el-form-item>
-        <el-form-item label="商品名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入商品名称" />
+        <el-form-item label="商品名称" prop="productName">
+          <el-input v-model="form.productName" placeholder="请输入商品名称" />
         </el-form-item>
-        <el-form-item label="商品价格" prop="price">
-          <el-input v-model="form.price" placeholder="请输入商品价格" />
+        <el-form-item label="商品价格" prop="productPrice">
+          <el-input v-model="form.productPrice" placeholder="请输入商品价格" />
         </el-form-item>
-        <el-form-item label="是否首页推荐1：推，0：不推" prop="isRecommend">
-          <el-input v-model="form.isRecommend" placeholder="请输入是否首页推荐1：推，0：不推" />
+        <el-form-item label="首页图片" prop="imageUrl">
+          <image-upload v-model="form.imageUrl" :limit="1"/>
         </el-form-item>
-        <el-form-item label="是否启用状态1：启用，0：停用" prop="isActive">
-          <el-input v-model="form.isActive" placeholder="请输入是否启用状态1：启用，0：停用" />
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio
+              v-for="dict in dict.type.sys_normal_disable"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
         </el-form-item>
-        <el-form-item label="商品图片URL" prop="imageUrl">
-          <el-input v-model="form.imageUrl" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+        <el-form-item label="排序" prop="sortOrder">
+          <el-input-number v-model="form.sortOrder" controls-position="right" :min="0" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -169,14 +165,100 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 商品参数弹框 -->
+    <el-dialog :title="productParamTitle" :visible.sync="productParamOpen" width="500px" append-to-body>
+      <el-row :gutter="10" class="mb8">
+        <el-col :span="1.5">
+          <el-button
+            type="primary"
+            plain
+            icon="el-icon-plus"
+            size="mini"
+            @click="handleProductParamAdd"
+          >新增</el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button
+            type="success"
+            plain
+            icon="el-icon-edit"
+            size="mini"
+            :disabled="single"
+            @click="handleProductParamUpdate"
+          >修改</el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button
+            type="danger"
+            plain
+            icon="el-icon-delete"
+            size="mini"
+            :disabled="single"
+            @click="handleProductParamDelete"
+          >删除</el-button>
+        </el-col>
+      </el-row>
+      <el-table v-loading="loading" :data="paramList" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55" align="center" />
+        <el-table-column label="参数名称" align="center" prop="paramName" />
+        <el-table-column label="参数值" align="center" prop="paramValue" />
+        <el-table-column label="状态" align="center" prop="status">
+          <template slot-scope="scope">
+            <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="排序" align="center" prop="sortOrder" />
+      </el-table>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitForm">确 定</el-button>
+        <el-button @click="cancelProductParam">取 消</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 添加或修改商品参数对话框 -->
+    <el-dialog :title="productParamAddUpdateTitle" :visible.sync="productParamAddUpdateOpen" width="500px" append-to-body>
+      <el-form ref="form" :model="productParamForm" :rules="rules" label-width="80px">
+        <el-form-item label="商品ID" prop="productId">
+          <el-input v-model="productParamForm.productId" placeholder="请输入参数名称" />
+        </el-form-item>
+        <el-form-item label="参数名称" prop="paramName">
+          <el-input v-model="productParamForm.paramName" placeholder="请输入参数名称" />
+        </el-form-item>
+        <el-form-item label="参数值" prop="paramValue">
+          <el-input v-model="productParamForm.paramValue" placeholder="请输入参数值" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="productParamForm.status">
+            <el-radio
+              v-for="dict in dict.type.sys_normal_disable"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="排序" prop="sortOrder">
+          <el-input-number v-model="productParamForm.sortOrder" controls-position="right" :min="0" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitFormProductParam">确 定</el-button>
+        <el-button @click="cancelProductAddUpdateParam">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import { listProduct, getProduct, delProduct, addProduct, updateProduct } from "@/api/business/product";
+import { listAllStore } from '@/api/business/carousel'
+import { listAllCategory } from '@/api/business/category'
+import { addParam, delParam, getParam, listParam, updateParam } from '@/api/business/param'
 
 export default {
   name: "Product",
+  dicts: ['sys_normal_disable'],
+
   data() {
     return {
       // 遮罩层
@@ -197,37 +279,64 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 商品参数弹出层标题
+      productParamTitle : "",
+      // 是否显示商品参数弹出层
+      productParamOpen : false,
+
+      //商品参数新增修改弹出层标题
+      productParamAddUpdateTitle : "",
+      //商品参数新增修改
+      productParamAddUpdateOpen : false,
+
       // 查询参数
       queryParams: {
         pageNum: 1,
         pageSize: 10,
         categoryId: null,
         storeId: null,
-        name: null,
-        isRecommend: null,
-        isActive: null,
+        productName: null,
+        status: null,
       },
       // 表单参数
       form: {},
+
+      // 表单参数
+      productParamForm: {},
       // 表单校验
       rules: {
         categoryId: [
-          { required: true, message: "所属类目ID不能为空", trigger: "blur" }
+          { required: true, message: "产品类目不能为空", trigger: "blur" }
         ],
         storeId: [
-          { required: true, message: "门店ID不能为空", trigger: "blur" }
+          { required: true, message: "门店不能为空", trigger: "blur" }
         ],
-        name: [
+        productName: [
           { required: true, message: "商品名称不能为空", trigger: "blur" }
         ],
-        price: [
+        productPrice: [
           { required: true, message: "商品价格不能为空", trigger: "blur" }
         ],
-      }
+      },
+
+      //门店
+      storeOptions: [],
+
+      //产品类目
+      categoryOptions: [],
+
+      // 商品参数表格数据
+      paramList: [],
+
+      productId: null,
+
+
     };
   },
   created() {
     this.getList();
+    this.getListAllStore();
+    this.getListAllCategory();
   },
   methods: {
     /** 查询商品列表 */
@@ -250,11 +359,11 @@ export default {
         id: null,
         categoryId: null,
         storeId: null,
-        name: null,
-        price: null,
-        isRecommend: null,
-        isActive: null,
+        productName: null,
+        productPrice: null,
         imageUrl: null,
+        status: null,
+        sortOrder: null,
         createBy: null,
         createTime: null,
         updateBy: null,
@@ -330,7 +439,117 @@ export default {
       this.download('business/product/export', {
         ...this.queryParams
       }, `product_${new Date().getTime()}.xlsx`)
-    }
+    },
+
+    /** 查询门店列表 */
+    getListAllStore() {
+      this.loading = true;
+      listAllStore().then(response => {
+        this.storeOptions = response.data;
+      });
+    },
+
+    /** 查询产品列表 */
+    getListAllCategory() {
+      this.loading = true;
+      listAllCategory().then(response => {
+        this.categoryOptions = response.data;
+      });
+    },
+
+
+    // 表单重置
+    resetProductParam() {
+      this.productParamForm = {
+        id: null,
+        productId: null,
+        paramName: null,
+        paramValue: null,
+        status: null,
+        sortOrder: null,
+        createBy: null,
+        createTime: null,
+        updateBy: null,
+        updateTime: null,
+        remark: null
+      };
+      this.resetForm("form");
+    },
+    // 商品参数取消按钮
+    cancelProductParam() {
+      this.productParamOpen = false;
+      this.resetProductParam();
+    },
+    // 商品参数新增修改取消按钮
+    cancelProductAddUpdateParam() {
+      this.productParamAddUpdateOpen = false;
+      this.resetProductParam();
+    },
+
+
+    /** 商品参数弹框 */
+    handleProductParam(productId) {
+      this.productParamOpen = true;
+      this.productParamTitle = "商品参数";
+      this.getProductParamList(productId);
+    },
+
+    /** 商品参数新增按钮操作 */
+    handleProductParamAdd() {
+      this.resetProductParam();
+      this.productParamAddUpdateOpen = true;
+      this.productParamAddUpdateTitle = "添加商品参数";
+    },
+    /** 商品参数修改按钮操作 */
+    handleProductParamUpdate(row) {
+      this.resetProductParam();
+      const id = row.id || this.ids
+      getParam(id).then(response => {
+        this.productParamForm = response.data;
+        this.productParamAddUpdateOpen = true;
+        this.title = "修改商品参数";
+      });
+    },
+    /** 商品参数删除按钮操作 */
+    handleProductParamDelete(row) {
+      const ids = row.id || this.ids;
+      this.$modal.confirm('是否确认删除商品参数').then(function() {
+        return delParam(ids);
+      }).then(() => {
+        this.getProductParamList(productId);
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    },
+
+    /** 查询商品参数列表 */
+    getProductParamList(productId) {
+      this.loading = true;
+      listParam(productId).then(response => {
+        this.paramList = response.rows;
+        this.total = response.total;
+        this.loading = false;
+      });
+    },
+    /** 提交按钮 */
+    submitFormProductParam() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          if (this.productParamForm.id != null) {
+            updateParam(this.productParamForm).then(response => {
+              this.$modal.msgSuccess("修改成功");
+              this.productParamAddUpdateOpen = false;
+              this.getProductParamList();
+            });
+          } else {
+            addParam(this.productParamForm).then(response => {
+              this.$modal.msgSuccess("新增成功");
+              this.productParamAddUpdateOpen = false;
+              this.getProductParamList();
+            });
+          }
+        }
+      });
+    },
   }
 };
 </script>
