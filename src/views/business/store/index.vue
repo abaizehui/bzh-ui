@@ -75,7 +75,7 @@
             type="text"
             icon="el-icon-edit"
             @click="handleCarousel(scope.row.id)"
-          >详情图</el-button>
+          >轮播图</el-button>
           <el-button
             size="mini"
             type="text"
