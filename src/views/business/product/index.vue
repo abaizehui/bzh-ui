@@ -224,6 +224,13 @@
       <div slot="footer" class="dialog-footer">
         <el-button @click="cancelProductParam">取 消</el-button>
       </div>
+      <pagination
+        v-show="totalProductParam>0"
+        :total="totalProductParam"
+        :page.sync="queryParamsProductParam.pageNum"
+        :limit.sync="queryParamsProductParam.pageSize"
+        @pagination="getProductParamList"
+      />
     </el-dialog>
 
     <!-- 添加或修改商品参数对话框 -->
@@ -305,6 +312,13 @@
       <div slot="footer" class="dialog-footer">
         <el-button @click="cancelProductDetail">取 消</el-button>
       </div>
+      <pagination
+        v-show="totalProductDetail>0"
+        :total="totalProductDetail"
+        :page.sync="queryParamsProductDetail.pageNum"
+        :limit.sync="queryParamsProductDetail.pageSize"
+        @pagination="getProductDetailList"
+      />
     </el-dialog>
 
     <!-- 添加或修改商品详情图对话框 -->
@@ -384,6 +398,13 @@
       <div slot="footer" class="dialog-footer">
         <el-button @click="cancelProductScene">取 消</el-button>
       </div>
+      <pagination
+        v-show="totalProductScene>0"
+        :total="totalProductScene"
+        :page.sync="queryParamsProductScene.pageNum"
+        :limit.sync="queryParamsProductScene.pageSize"
+        @pagination="getProductSceneList"
+      />
     </el-dialog>
 
     <!-- 添加或修改商品实景图对话框 -->
@@ -440,6 +461,7 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
+
       // 商品表格数据
       productList: [],
       // 弹出层标题
@@ -484,6 +506,34 @@ export default {
         storeId: null,
         productName: null,
         status: null,
+      },
+
+      // 总条数
+      totalProductDetail: 0,
+      // 查询参数
+      queryParamsProductDetail: {
+        pageNum: 1,
+        pageSize: 10,
+        productId: null,
+      },
+
+
+      // 总条数
+      totalProductParam: 0,
+      // 查询参数
+      queryParamsProductParam: {
+        pageNum: 1,
+        pageSize: 10,
+        productId: null,
+      },
+
+      // 总条数
+      totalProductScene: 0,
+      // 查询参数
+      queryParamsProductScene: {
+        pageNum: 1,
+        pageSize: 10,
+        productId: null,
       },
       // 表单参数
       form: {},
@@ -760,11 +810,15 @@ export default {
     },
 
     /** 查询商品参数列表 */
-    getProductParamList(productId) {
+    getProductParamList() {
       this.loading = true;
-      listParam(productId).then(response => {
+      const fullData = {
+        ...this.queryParamsProductParam,
+        productId: productIdGlobal
+      };
+      listParam(fullData).then(response => {
         this.paramList = response.rows;
-        this.total = response.total;
+        this.totalProductParam = response.total;
         this.loading = false;
       });
     },
@@ -829,7 +883,7 @@ export default {
       productIdGlobal = rowProductId;
       this.productDetailOpen = true;
       this.productDetailTitle = "商品详情图";
-      this.getProductDetailList(productIdGlobal);
+      this.getProductDetailList();
     },
 
     /** 商品参数新增按钮操作 */
@@ -854,18 +908,22 @@ export default {
       this.$modal.confirm('是否确认删除商品详情图').then(function() {
         return delDetail(ids);
       }).then(() => {
-        this.getProductDetailList(productIdGlobal);
+        this.getProductDetailList();
         this.$modal.msgSuccess("删除成功");
       }).catch(() => {});
     },
 
 
     /** 查询商品参数列表 */
-    getProductDetailList(productId) {
+    getProductDetailList() {
       this.loading = true;
-      listDetail(productId).then(response => {
+      const fullData = {
+        ...this.queryParamsProductDetail,
+        productId: productIdGlobal
+      };
+      listDetail(fullData).then(response => {
         this.detailList = response.rows;
-        this.total = response.total;
+        this.totalProductDetail = response.total;
         this.loading = false;
       });
     },
@@ -874,21 +932,17 @@ export default {
     submitFormProductDetail() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          const fullData = {
-            ...this.productDetailForm,
-            productId: productIdGlobal
-          };
-          if (fullData.id != null) {
-            updateDetail(fullData).then(response => {
+          if (this.productDetailForm.id != null) {
+            updateDetail(this.productDetailForm).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.productDetailAddUpdateOpen = false;
-              this.getProductDetailList(productIdGlobal);
+              this.getProductDetailList();
             });
           } else {
-            addDetail(fullData).then(response => {
+            addDetail(this.productDetailForm).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.productDetailAddUpdateOpen = false;
-              this.getProductDetailList(productIdGlobal);
+              this.getProductDetailList();
             });
           }
         }
@@ -964,11 +1018,15 @@ export default {
 
 
     /** 查询商品实景图列表 */
-    getProductSceneList(productId) {
+    getProductSceneList() {
       this.loading = true;
-      listScene(productId).then(response => {
+      const fullData = {
+        ...this.queryParamsProductScene,
+        productId: productIdGlobal
+      };
+      listScene(fullData).then(response => {
         this.sceneList = response.rows;
-        this.total = response.total;
+        this.totalProductScene = response.total;
         this.loading = false;
       });
     },

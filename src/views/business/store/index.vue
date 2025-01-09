@@ -175,6 +175,13 @@
       <div slot="footer" class="dialog-footer">
         <el-button @click="cancelCarousel">取 消</el-button>
       </div>
+      <pagination
+        v-show="totalCarousel>0"
+        :total="totalCarousel"
+        :page.sync="queryParamsCarousel.pageNum"
+        :limit.sync="queryParamsCarousel.pageSize"
+        @pagination="getCarouselList"
+      />
     </el-dialog>
 
     <!-- 添加或修改轮播图对话框 -->
@@ -239,6 +246,15 @@ export default {
         pageSize: 10,
         storeName: null,
         tel: null,
+      },
+
+      // 总条数
+      totalCarousel: 0,
+      // 查询参数
+      queryParamsCarousel: {
+        pageNum: 1,
+        pageSize: 10,
+        productId: null,
       },
       // 表单参数
       form: {},
@@ -452,9 +468,13 @@ export default {
 
 
     /** 查询商品实景图列表 */
-    getCarouselList(storeId) {
+    getCarouselList() {
       this.loading = true;
-      listCarousel(storeId).then(response => {
+      const fullData = {
+        ...this.queryParamsCarousel,
+        storeId: storeIdGlobal
+      };
+      listCarousel(fullData).then(response => {
         this.carouselList = response.rows;
         this.total = response.total;
         this.loading = false;

@@ -1,10 +1,11 @@
 import request from '@/utils/request'
 
 // 查询商品参数列表
-export function listParam(productId) {
+export function listParam(query) {
   return request({
-    url: '/business/param/list/' + productId,
-    method: 'get'
+    url: '/business/param/list',
+    method: 'get',
+    params: query
   })
 }
 
