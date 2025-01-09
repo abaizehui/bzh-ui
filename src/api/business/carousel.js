@@ -1,11 +1,10 @@
 import request from '@/utils/request'
 
 // 查询轮播图列表
-export function listCarousel(query) {
+export function listCarousel(storeId) {
   return request({
-    url: '/business/carousel/list',
-    method: 'get',
-    params: query
+    url: '/business/carousel/list/' + storeId,
+    method: 'get'
   })
 }
 

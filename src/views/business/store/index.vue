@@ -74,9 +74,8 @@
             size="mini"
             type="text"
             icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
-            v-hasPermi="['business:store:edit']"
-          >修改</el-button>
+            @click="handleCarousel(scope.row.id)"
+          >详情图</el-button>
           <el-button
             size="mini"
             type="text"
@@ -123,11 +122,93 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+
+
+    <!-- 轮播图弹框 -->
+    <el-dialog :title="carouselTitle" :visible.sync="carouselOpen" width="500px" append-to-body>
+      <el-row :gutter="10" class="mb8">
+        <el-col :span="1.5">
+          <el-button
+            type="primary"
+            plain
+            icon="el-icon-plus"
+            size="mini"
+            @click="handleCarouselAdd"
+          >新增</el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button
+            type="success"
+            plain
+            icon="el-icon-edit"
+            size="mini"
+            :disabled="single"
+            @click="handleCarouselUpdate"
+          >修改</el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button
+            type="danger"
+            plain
+            icon="el-icon-delete"
+            size="mini"
+            :disabled="single"
+            @click="handleCarouselDelete"
+          >删除</el-button>
+        </el-col>
+      </el-row>
+      <el-table v-loading="loading" :data="carouselList" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55" align="center" />
+        <el-table-column label="图片" align="center" prop="imageUrl">
+          <template #default="scope">
+            <img :src="scope.row.imageUrl" alt="图片" style="max-width: 100px; max-height: 100px;">
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" align="center" prop="status">
+          <template slot-scope="scope">
+            <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="排序" align="center" prop="sortOrder" />
+      </el-table>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelCarousel">取 消</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 添加或修改轮播图对话框 -->
+    <el-dialog :title="carouselAddUpdateTitle" :visible.sync="carouselAddUpdateOpen" width="500px" append-to-body>
+      <el-form ref="form" :model="carouselForm" :rules="rulesCarousel" label-width="80px">
+        <el-form-item label="图片" prop="imageUrl">
+          <image-upload v-model="carouselForm.imageUrl" :limit="1"/>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="carouselForm.status">
+            <el-radio
+              v-for="dict in dict.type.sys_normal_disable"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="排序" prop="sortOrder">
+          <el-input-number v-model="carouselForm.sortOrder" controls-position="right" :min="0" :value="1" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitFormCarousel">确 定</el-button>
+        <el-button @click="cancelCarouselAddUpdate">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import { listStore, getStore, delStore, addStore, updateStore } from "@/api/business/store";
+import { addCarousel, delCarousel, getCarousel, listCarousel, updateCarousel } from '@/api/business/carousel'
+
+let storeIdGlobal = 0;
 
 export default {
   name: "Store",
@@ -172,6 +253,29 @@ export default {
         tel: [
           { required: true, message: "联系电话不能为空", trigger: "blur" }
         ],
+      },
+
+      // 轮播图表格数据
+      carouselList: [],
+
+      carouselForm: {},
+      // 轮播图弹出层标题
+      carouselTitle : "",
+      // 轮播图弹出层
+      carouselOpen : false,
+
+      //轮播图新增修改弹出层标题
+      carouselAddUpdateTitle : "",
+      //轮播图新增修改
+      carouselAddUpdateOpen : false,
+      // 表单校验
+      rulesCarousel: {
+        imageUrl: [
+          { required: true, message: "图片不能为空", trigger: "blur" }
+        ],
+        sortOrder: [
+          { required: true, message: "排序不能为空", trigger: "blur" }
+        ]
       }
     };
   },
@@ -200,7 +304,7 @@ export default {
         storeName: null,
         address: null,
         tel: null,
-        status: null,
+        status: "0",
         createBy: null,
         createTime: null,
         updateBy: null,
@@ -276,7 +380,111 @@ export default {
       this.download('business/store/export', {
         ...this.queryParams
       }, `store_${new Date().getTime()}.xlsx`)
-    }
+    },
+
+
+
+
+    // 表单重置
+    resetCarousel() {
+      this.carouselForm = {
+        id: null,
+        storeId: null,
+        imageUrl: null,
+        status: "0",
+        sortOrder: 1,
+        createBy: null,
+        createTime: null,
+        updateBy: null,
+        updateTime: null,
+        remark: null
+      };
+      this.resetForm("form");
+    },
+
+    // 轮播图取消按钮
+    cancelCarousel() {
+      this.carouselOpen = false;
+      this.resetCarousel();
+    },
+
+    // 轮播图新增修改取消按钮
+    cancelCarouselAddUpdate() {
+      this.carouselAddUpdateOpen = false;
+      this.resetCarousel();
+    },
+
+
+    /** 轮播图 */
+    handleCarousel(rowStoreId) {
+      storeIdGlobal = rowStoreId;
+      this.carouselOpen = true;
+      this.carouselTitle = "轮播图";
+      this.getCarouselList(storeIdGlobal);
+    },
+
+    /** 轮播图新增按钮操作 */
+    handleCarouselAdd() {
+      this.resetCarousel();
+      this.carouselAddUpdateOpen = true;
+      this.carouselAddUpdateTitle = "添加商品详情图";
+    },
+    /** 轮播图修改按钮操作 */
+    handleCarouselUpdate(row) {
+      this.resetCarousel();
+      const id = row.id || this.ids
+      getCarousel(id).then(response => {
+        this.carouselForm = response.data;
+        this.carouselAddUpdateOpen = true;
+        this.title = "修改轮播图";
+      });
+    },
+    /** 轮播图删除按钮操作 */
+    handleCarouselDelete(row) {
+      const ids = row.id || this.ids;
+      this.$modal.confirm('是否确认删除轮播图').then(function() {
+        return delCarousel(ids);
+      }).then(() => {
+        this.getCarouselList(storeIdGlobal);
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    },
+
+
+    /** 查询商品实景图列表 */
+    getCarouselList(storeId) {
+      this.loading = true;
+      listCarousel(storeId).then(response => {
+        this.carouselList = response.rows;
+        this.total = response.total;
+        this.loading = false;
+      });
+    },
+
+    /** 提交按钮 */
+    submitFormCarousel() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          const fullData = {
+            ...this.carouselForm,
+            storeId: storeIdGlobal
+          };
+          if (fullData.id != null) {
+            updateCarousel(fullData).then(response => {
+              this.$modal.msgSuccess("修改成功");
+              this.carouselAddUpdateOpen = false;
+              this.getCarouselList(storeIdGlobal);
+            });
+          } else {
+            addCarousel(fullData).then(response => {
+              this.$modal.msgSuccess("新增成功");
+              this.carouselAddUpdateOpen = false;
+              this.getCarouselList(storeIdGlobal);
+            });
+          }
+        }
+      });
+    },
   }
 };
 </script>

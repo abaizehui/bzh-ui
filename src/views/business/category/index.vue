@@ -127,7 +127,7 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="排序" prop="sortOrder">
-          <el-input-number v-model="form.sortOrder" controls-position="right" :min="0" />
+          <el-input-number v-model="form.sortOrder" controls-position="right" :min="0"  :value="1"/>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -220,9 +220,9 @@ export default {
         id: null,
         storeId: null,
         categoryName: null,
-        sortOrder: null,
         imageUrl: null,
-        status: null,
+        status: "0",
+        sortOrder: 1,
         createBy: null,
         createTime: null,
         updateBy: null,
