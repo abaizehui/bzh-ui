@@ -748,7 +748,6 @@ export default {
     resetProductParam() {
       this.productParamForm = {
         id: null,
-        productId: null,
         paramName: null,
         paramValue: null,
         status: "0",
@@ -852,7 +851,6 @@ export default {
     resetProductDetail() {
       this.productDetailForm = {
         id: null,
-        productId: null,
         imageUrl: null,
         status: "0",
         sortOrder: 1,
@@ -932,14 +930,18 @@ export default {
     submitFormProductDetail() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          if (this.productDetailForm.id != null) {
-            updateDetail(this.productDetailForm).then(response => {
+          const fullData = {
+            ...this.productDetailForm,
+            productId: productIdGlobal
+          };
+          if (fullData.id != null) {
+            updateDetail(fullData).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.productDetailAddUpdateOpen = false;
               this.getProductDetailList();
             });
           } else {
-            addDetail(this.productDetailForm).then(response => {
+            addDetail(fullData).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.productDetailAddUpdateOpen = false;
               this.getProductDetailList();
@@ -955,7 +957,6 @@ export default {
     resetProductScene() {
       this.productSceneForm = {
         id: null,
-        productId: null,
         imageUrl: null,
         status: "0",
         sortOrder: 1,
@@ -1043,13 +1044,13 @@ export default {
             updateScene(fullData).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.productSceneAddUpdateOpen = false;
-              this.getProductSceneList(productIdGlobal);
+              this.getProductSceneList();
             });
           } else {
             addScene(fullData).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.productSceneAddUpdateOpen = false;
-              this.getProductSceneList(productIdGlobal);
+              this.getProductSceneList();
             });
           }
         }
