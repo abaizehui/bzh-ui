@@ -36,14 +36,14 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="danger"
+          type="success"
           plain
-          icon="el-icon-delete"
+          icon="el-icon-edit"
           size="mini"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['business:store:remove']"
-        >删除</el-button>
+          :disabled="single"
+          @click="handleUpdate"
+          v-hasPermi="['business:store:edit']"
+        >修改</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -63,6 +63,7 @@
       <el-table-column label="门店名称" align="center" prop="storeName" />
       <el-table-column label="门店地址" align="center" prop="address" />
       <el-table-column label="联系电话" align="center" prop="tel" />
+      <el-table-column label="小程序ID" align="center" prop="appId" />
       <el-table-column label="状态" align="center" prop="status">
         <template slot-scope="scope">
           <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/>
@@ -106,6 +107,9 @@
         </el-form-item>
         <el-form-item label="联系电话" prop="tel">
           <el-input v-model="form.tel" placeholder="请输入联系电话" />
+        </el-form-item>
+        <el-form-item label="小程序ID" prop="appId">
+          <el-input v-model="form.appId" placeholder="请输入小程序ID" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
@@ -268,6 +272,9 @@ export default {
         ],
         tel: [
           { required: true, message: "联系电话不能为空", trigger: "blur" }
+        ],
+        appId: [
+          { required: true, message: "小程序ID不能为空", trigger: "blur" }
         ],
       },
 

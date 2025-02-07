@@ -91,6 +91,11 @@
           <img :src="scope.row.imageUrl" alt="图标" style="max-width: 100px; max-height: 100px;">
         </template>
       </el-table-column>
+      <el-table-column label="首页推荐" align="center" prop="recommend">
+        <template slot-scope="scope">
+          <dict-tag :options="dict.type.bzh_recommend" :value="scope.row.recommend"/>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" align="center" prop="status">
         <template slot-scope="scope">
           <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/>
@@ -157,6 +162,15 @@
         </el-form-item>
         <el-form-item label="首页图片" prop="imageUrl">
           <image-upload v-model="form.imageUrl" :limit="1"/>
+        </el-form-item>
+        <el-form-item label="首页推荐" prop="recommend">
+          <el-radio-group v-model="form.recommend">
+            <el-radio
+              v-for="dict in dict.type.bzh_recommend"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
@@ -446,7 +460,7 @@ let productIdGlobal = 0;
 
 export default {
   name: "Product",
-  dicts: ['sys_normal_disable'],
+  dicts: ['sys_normal_disable',"bzh_recommend"],
   data() {
     return {
       // 遮罩层
@@ -506,6 +520,7 @@ export default {
         storeId: null,
         productName: null,
         status: null,
+        recommend: null,
       },
 
       // 总条数
@@ -649,6 +664,7 @@ export default {
         productPrice: null,
         imageUrl: null,
         status: "0",
+        recommend: "1",
         sortOrder: 1,
         createBy: null,
         createTime: null,
