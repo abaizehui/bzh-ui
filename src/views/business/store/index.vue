@@ -62,7 +62,13 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="门店名称" align="center" prop="storeName" />
       <el-table-column label="门店地址" align="center" prop="address" />
+      <el-table-column label="门头" align="center" prop="imageUrl">
+        <template #default="scope">
+          <img :src="scope.row.imageUrl" alt="图标" style="max-width: 100px; max-height: 100px;">
+        </template>
+      </el-table-column>
       <el-table-column label="联系电话" align="center" prop="tel" />
+      <el-table-column label="营业时间" align="center" prop="businessHours" />
       <el-table-column label="小程序ID" align="center" prop="appId" />
       <el-table-column label="状态" align="center" prop="status">
         <template slot-scope="scope">
@@ -105,8 +111,14 @@
         <el-form-item label="门店地址" prop="address">
           <el-input v-model="form.address" placeholder="请输入内容" />
         </el-form-item>
+        <el-form-item label="门头" prop="imageUrl">
+          <image-upload v-model="form.imageUrl" :limit="1"/>
+        </el-form-item>
         <el-form-item label="联系电话" prop="tel">
           <el-input v-model="form.tel" placeholder="请输入联系电话" />
+        </el-form-item>
+        <el-form-item label="营业时间" prop="businessHours">
+          <el-input v-model="form.businessHours" placeholder="请输入营业时间" />
         </el-form-item>
         <el-form-item label="小程序ID" prop="appId">
           <el-input v-model="form.appId" placeholder="请输入小程序ID" />
@@ -275,6 +287,9 @@ export default {
         ],
         appId: [
           { required: true, message: "小程序ID不能为空", trigger: "blur" }
+        ],
+        imageUrl: [
+          { required: true, message: "首页门头不能为空", trigger: "blur" }
         ],
       },
 
