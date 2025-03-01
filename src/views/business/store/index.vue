@@ -61,7 +61,15 @@
     <el-table v-loading="loading" :data="storeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="门店名称" align="center" prop="storeName" />
+      <el-table-column label="门店地址名称" align="center" prop="addressName" />
       <el-table-column label="门店地址" align="center" prop="address" />
+      <el-table-column label="纬度" align="center" prop="latitude" />
+      <el-table-column label="经度" align="center" prop="longitude" />
+      <el-table-column label="客服名片" align="center" prop="carUrl">
+        <template #default="scope">
+          <img :src="scope.row.carUrl" alt="图标" style="max-width: 100px; max-height: 100px;">
+        </template>
+      </el-table-column>
       <el-table-column label="门头" align="center" prop="imageUrl">
         <template #default="scope">
           <img :src="scope.row.imageUrl" alt="图标" style="max-width: 100px; max-height: 100px;">
@@ -108,8 +116,20 @@
         <el-form-item label="门店名称" prop="storeName">
           <el-input v-model="form.storeName" placeholder="请输入门店名称" />
         </el-form-item>
+        <el-form-item label="门店地址名称" prop="addressName">
+          <el-input v-model="form.addressName" placeholder="请输入内容" />
+        </el-form-item>
         <el-form-item label="门店地址" prop="address">
           <el-input v-model="form.address" placeholder="请输入内容" />
+        </el-form-item>
+        <el-form-item label="纬度" prop="latitude">
+          <el-input v-model="form.latitude" placeholder="请输入内容" />
+        </el-form-item>
+        <el-form-item label="经度" prop="longitude">
+          <el-input v-model="form.longitude" placeholder="请输入内容" />
+        </el-form-item>
+        <el-form-item label="客服名片" prop="carUrl">
+          <image-upload v-model="form.carUrl" :limit="1"/>
         </el-form-item>
         <el-form-item label="门头" prop="imageUrl">
           <image-upload v-model="form.imageUrl" :limit="1"/>
@@ -287,10 +307,7 @@ export default {
         ],
         appId: [
           { required: true, message: "小程序ID不能为空", trigger: "blur" }
-        ],
-        imageUrl: [
-          { required: true, message: "首页门头不能为空", trigger: "blur" }
-        ],
+        ]
       },
 
       // 轮播图表格数据
@@ -340,8 +357,14 @@ export default {
       this.form = {
         id: null,
         storeName: null,
+        addressName: null,
         address: null,
+        latitude: null,
+        longitude: null,
+        carUrl: null,
+        imageUrl: null,
         tel: null,
+        businessHours: null,
         status: "0",
         createBy: null,
         createTime: null,
