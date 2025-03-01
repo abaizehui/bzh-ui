@@ -115,6 +115,12 @@
             size="mini"
             type="text"
             icon="el-icon-edit"
+            @click="handleProductConfig(scope.row.id)"
+          >商品配置</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-edit"
             @click="handleProductDetail(scope.row.id)"
           >详情图</el-button>
           <el-button
@@ -275,6 +281,90 @@
       </div>
     </el-dialog>
 
+
+    <!-- 商品参数弹框 -->
+    <el-dialog :title="productConfigTitle" :visible.sync="productConfigOpen" width="500px" append-to-body>
+      <el-row :gutter="10" class="mb8">
+        <el-col :span="1.5">
+          <el-button
+            type="primary"
+            plain
+            icon="el-icon-plus"
+            size="mini"
+            @click="handleProductConfigAdd"
+          >新增</el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button
+            type="success"
+            plain
+            icon="el-icon-edit"
+            size="mini"
+            :disabled="single"
+            @click="handleProductConfigUpdate"
+          >修改</el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button
+            type="danger"
+            plain
+            icon="el-icon-delete"
+            size="mini"
+            :disabled="single"
+            @click="handleProductConfigDelete"
+          >删除</el-button>
+        </el-col>
+      </el-row>
+      <el-table v-loading="loading" :data="configList" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55" align="center" />
+        <el-table-column label="配置名称" align="center" prop="configName" />
+        <el-table-column label="配置值" align="center" prop="configValue" />
+        <el-table-column label="状态" align="center" prop="status">
+          <template slot-scope="scope">
+            <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="排序" align="center" prop="sortOrder" />
+      </el-table>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelProductConfig">取 消</el-button>
+      </div>
+      <pagination
+        v-show="totalProductConfig>0"
+        :total="totalProductConfig"
+        :page.sync="queryParamsProductConfig.pageNum"
+        :limit.sync="queryParamsProductConfig.pageSize"
+        @pagination="getProductConfigList"
+      />
+    </el-dialog>
+
+    <!-- 添加或修改商品参数对话框 -->
+    <el-dialog :title="productConfigAddUpdateTitle" :visible.sync="productConfigAddUpdateOpen" width="500px" append-to-body>
+      <el-form ref="form" :model="productConfigForm" :rules="rulesConfig" label-width="80px">
+        <el-form-item label="配置名称" prop="configName">
+          <el-input v-model="productConfigForm.configName" placeholder="请输入配置名称" />
+        </el-form-item>
+        <el-form-item label="配置值" prop="configValue">
+          <el-input v-model="productConfigForm.configValue" placeholder="请输入配置值" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="productConfigForm.status">
+            <el-radio
+              v-for="dict in dict.type.sys_normal_disable"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="排序" prop="sortOrder">
+          <el-input-number v-model="productConfigForm.sortOrder" controls-position="right" :min="0" :value="1"/>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitFormProductConfig">确 定</el-button>
+        <el-button @click="cancelProductAddUpdateConfig">取 消</el-button>
+      </div>
+    </el-dialog>
 
     <!-- 商品详情弹框 -->
     <el-dialog :title="productDetailTitle" :visible.sync="productDetailOpen" width="500px" append-to-body>
@@ -453,6 +543,8 @@ import { listProduct, getProduct, delProduct, addProduct, updateProduct } from "
 import { listAllStore } from '@/api/business/carousel'
 import { listAllCategory } from '@/api/business/category'
 import { addParam, delParam, getParam, listParam, updateParam } from '@/api/business/param'
+import { addConfig, delConfig, getConfig, listConfig, updateConfig } from '@/api/business/config'
+
 import { addDetail, delDetail, getDetail, listDetail, updateDetail } from '@/api/business/detail'
 import { addScene, delScene, getScene, listScene, updateScene } from '@/api/business/scene'
 
@@ -491,6 +583,16 @@ export default {
       productParamAddUpdateTitle : "",
       //商品参数新增修改
       productParamAddUpdateOpen : false,
+
+      // 商品配置弹出层标题
+      productConfigTitle : "",
+      // 是否显示商品配置弹出层
+      productConfigOpen : false,
+
+      //商品配置新增修改弹出层标题
+      productConfigAddUpdateTitle : "",
+      //商品配置新增修改
+      productConfigAddUpdateOpen : false,
 
       // 商品详情弹出层标题
       productDetailTitle : "",
@@ -543,6 +645,15 @@ export default {
       },
 
       // 总条数
+      totalProductConfig: 0,
+      // 查询参数
+      queryParamsProductConfig: {
+        pageNum: 1,
+        pageSize: 10,
+        productId: null,
+      },
+
+      // 总条数
       totalProductScene: 0,
       // 查询参数
       queryParamsProductScene: {
@@ -555,6 +666,8 @@ export default {
 
       // 表单参数
       productParamForm: {},
+      // 表单参数
+      productConfigForm: {},
       // 表单参数
       productDetailForm: {},
 
@@ -582,6 +695,22 @@ export default {
         ],
         paramValue: [
           { required: true, message: "参数值不能为空", trigger: "blur" }
+        ],
+        status: [
+          { required: true, message: "状态不能为空", trigger: "blur" }
+        ],
+        sort_order: [
+          { required: true, message: "排序不能为空", trigger: "blur" }
+        ],
+      },
+
+      // 表单校验
+      rulesConfig: {
+        configName: [
+          { required: true, message: "配置名称不能为空", trigger: "blur" }
+        ],
+        configValue: [
+          { required: true, message: "配置值不能为空", trigger: "blur" }
         ],
         status: [
           { required: true, message: "状态不能为空", trigger: "blur" }
@@ -625,6 +754,9 @@ export default {
 
       // 商品参数表格数据
       paramList: [],
+
+      // 商品配置表格数据
+      configList: [],
 
       // 商品详情图表格数据
       detailList: [],
@@ -856,6 +988,109 @@ export default {
               this.$modal.msgSuccess("新增成功");
               this.productParamAddUpdateOpen = false;
               this.getProductParamList(productIdGlobal);
+            });
+          }
+        }
+      });
+    },
+
+
+    // 表单重置
+    resetProductConfig() {
+      this.productConfigForm = {
+        id: null,
+        configName: null,
+        configValue: null,
+        status: "0",
+        sortOrder: 1,
+        createBy: null,
+        createTime: null,
+        updateBy: null,
+        updateTime: null,
+        remark: null
+      };
+      this.resetForm("form");
+    },
+    // 商品参数取消按钮
+    cancelProductConfig() {
+      this.productConfigOpen = false;
+      this.resetProductConfig();
+    },
+
+    // 商品参数新增修改取消按钮
+    cancelProductAddUpdateConfig() {
+      this.productConfigAddUpdateOpen = false;
+      this.resetProductConfig();
+    },
+
+
+    /** 商品参数弹框 */
+    handleProductConfig(rowProductId) {
+      productIdGlobal = rowProductId;
+      this.productConfigOpen = true;
+      this.productConfigTitle = "商品配置";
+      this.getProductConfigList(productIdGlobal);
+    },
+
+    /** 商品参数新增按钮操作 */
+    handleProductConfigAdd() {
+      this.resetProductConfig();
+      this.productConfigAddUpdateOpen = true;
+      this.productConfigAddUpdateTitle = "添加商品配置";
+    },
+    /** 商品参数修改按钮操作 */
+    handleProductConfigUpdate(row) {
+      this.resetProductConfig();
+      const id = row.id || this.ids
+      getConfig(id).then(response => {
+        this.productConfigForm = response.data;
+        this.productConfigAddUpdateOpen = true;
+        this.title = "修改商品配置";
+      });
+    },
+    /** 商品参数删除按钮操作 */
+    handleProductConfigDelete(row) {
+      const ids = row.id || this.ids;
+      this.$modal.confirm('是否确认删除商品配置').then(function() {
+        return delConfig(ids);
+      }).then(() => {
+        this.getProductConfigList(productIdGlobal);
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    },
+
+    /** 查询商品参数列表 */
+    getProductConfigList() {
+      this.loading = true;
+      const fullData = {
+        ...this.queryParamsProductConfig,
+        productId: productIdGlobal
+      };
+      listConfig(fullData).then(response => {
+        this.configList = response.rows;
+        this.totalProductParam = response.total;
+        this.loading = false;
+      });
+    },
+    /** 提交按钮 */
+    submitFormProductConfig() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          const fullData = {
+            ...this.productConfigForm,
+            productId: productIdGlobal
+          };
+          if (fullData.id != null) {
+            updateConfig(fullData).then(response => {
+              this.$modal.msgSuccess("修改成功");
+              this.productConfigAddUpdateOpen = false;
+              this.getProductConfigList(productIdGlobal);
+            });
+          } else {
+            addConfig(fullData).then(response => {
+              this.$modal.msgSuccess("新增成功");
+              this.productConfigAddUpdateOpen = false;
+              this.getProductConfigList(productIdGlobal);
             });
           }
         }
