@@ -75,6 +75,11 @@
           <img :src="scope.row.imageUrl" alt="图标" style="max-width: 100px; max-height: 100px;">
         </template>
       </el-table-column>
+      <el-table-column label="预约图" align="center" prop="shareUrl">
+        <template #default="scope">
+          <img :src="scope.row.shareUrl" alt="图标" style="max-width: 100px; max-height: 100px;">
+        </template>
+      </el-table-column>
       <el-table-column label="联系电话" align="center" prop="tel" />
       <el-table-column label="营业时间" align="center" prop="businessHours" />
       <el-table-column label="小程序ID" align="center" prop="appId" />
@@ -133,6 +138,9 @@
         </el-form-item>
         <el-form-item label="门头" prop="imageUrl">
           <image-upload v-model="form.imageUrl" :limit="1"/>
+        </el-form-item>
+        <el-form-item label="预约图" prop="shareUrl">
+          <image-upload v-model="form.shareUrl" :limit="1"/>
         </el-form-item>
         <el-form-item label="联系电话" prop="tel">
           <el-input v-model="form.tel" placeholder="请输入联系电话" />
@@ -363,6 +371,7 @@ export default {
         longitude: null,
         carUrl: null,
         imageUrl: null,
+        shareUrl: null,
         tel: null,
         businessHours: null,
         status: "0",

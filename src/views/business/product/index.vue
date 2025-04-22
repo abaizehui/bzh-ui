@@ -85,6 +85,7 @@
       <el-table-column label="门店" align="center" prop="storeName" />
       <el-table-column label="产品类目" align="center" prop="categoryName" />
       <el-table-column label="商品名称" align="center" prop="productName" />
+      <el-table-column label="商品描述" align="center" prop="productDescribe" />
       <el-table-column label="商品价格" align="center" prop="productPrice" />
       <el-table-column label="首页图片" align="center" prop="imageUrl">
         <template #default="scope">
@@ -162,6 +163,9 @@
         </el-form-item>
         <el-form-item label="商品名称" prop="productName">
           <el-input v-model="form.productName" placeholder="请输入商品名称" />
+        </el-form-item>
+        <el-form-item label="商品描述" prop="productDescribe">
+          <el-input v-model="form.productDescribe" placeholder="请输入商品描述" />
         </el-form-item>
         <el-form-item label="商品价格" prop="productPrice">
           <el-input v-model="form.productPrice" placeholder="请输入商品价格" />
