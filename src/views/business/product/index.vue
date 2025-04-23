@@ -259,7 +259,7 @@
 
     <!-- 添加或修改商品参数对话框 -->
     <el-dialog :title="productParamAddUpdateTitle" :visible.sync="productParamAddUpdateOpen" width="500px" append-to-body>
-      <el-form ref="form" :model="productParamForm" :rules="rulesParam" label-width="80px">
+      <el-form ref="productParamForm" :model="productParamForm" :rules="rulesParam" label-width="80px">
         <el-form-item label="参数名称" prop="paramName">
           <el-input v-model="productParamForm.paramName" placeholder="请输入参数名称" />
         </el-form-item>
@@ -344,7 +344,7 @@
 
     <!-- 添加或修改商品参数对话框 -->
     <el-dialog :title="productConfigAddUpdateTitle" :visible.sync="productConfigAddUpdateOpen" width="500px" append-to-body>
-      <el-form ref="form" :model="productConfigForm" :rules="rulesConfig" label-width="80px">
+      <el-form ref="productConfigForm" :model="productConfigForm" :rules="rulesConfig" label-width="80px">
         <el-form-item label="配置名称" prop="configName">
           <el-input v-model="productConfigForm.configName" placeholder="请输入配置名称" />
         </el-form-item>
@@ -431,7 +431,7 @@
 
     <!-- 添加或修改商品详情图对话框 -->
     <el-dialog :title="productDetailAddUpdateTitle" :visible.sync="productDetailAddUpdateOpen" width="500px" append-to-body>
-      <el-form ref="form" :model="productDetailForm" :rules="rulesDetail" label-width="80px">
+      <el-form ref="productDetailForm" :model="productDetailForm" :rules="rulesDetail" label-width="80px">
         <el-form-item label="图片" prop="imageUrl">
           <image-upload v-model="productDetailForm.imageUrl" :limit="1"/>
         </el-form-item>
@@ -517,7 +517,7 @@
 
     <!-- 添加或修改商品实景图对话框 -->
     <el-dialog :title="productSceneAddUpdateTitle" :visible.sync="productSceneAddUpdateOpen" width="500px" append-to-body>
-      <el-form ref="form" :model="productSceneForm" :rules="rulesScene" label-width="80px">
+      <el-form ref="productSceneForm" :model="productSceneForm" :rules="rulesScene" label-width="80px">
         <el-form-item label="图片" prop="imageUrl">
           <image-upload v-model="productSceneForm.imageUrl" :limit="1"/>
         </el-form-item>
@@ -975,7 +975,7 @@ export default {
     },
     /** 提交按钮 */
     submitFormProductParam() {
-      this.$refs["form"].validate(valid => {
+      this.$refs["productParamForm"].validate(valid => {
         if (valid) {
           const fullData = {
             ...this.productParamForm,
@@ -1078,7 +1078,7 @@ export default {
     },
     /** 提交按钮 */
     submitFormProductConfig() {
-      this.$refs["form"].validate(valid => {
+      this.$refs["productConfigForm"].validate(valid => {
         if (valid) {
           const fullData = {
             ...this.productConfigForm,
@@ -1183,7 +1183,7 @@ export default {
 
     /** 提交按钮 */
     submitFormProductDetail() {
-      this.$refs["form"].validate(valid => {
+      this.$refs["productDetailForm"].validate(valid => {
         if (valid) {
           const fullData = {
             ...this.productDetailForm,
@@ -1289,7 +1289,7 @@ export default {
 
     /** 提交按钮 */
     submitFormProductScene() {
-      this.$refs["form"].validate(valid => {
+      this.$refs["productSceneForm"].validate(valid => {
         if (valid) {
           const fullData = {
             ...this.productSceneForm,

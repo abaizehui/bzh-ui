@@ -99,6 +99,12 @@
           <el-button
             size="mini"
             type="text"
+            icon="el-icon-edit"
+            @click="handleVideo(scope.row.id)"
+          >门店视频</el-button>
+          <el-button
+            size="mini"
+            type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
             v-hasPermi="['business:store:remove']"
@@ -230,7 +236,7 @@
 
     <!-- 添加或修改轮播图对话框 -->
     <el-dialog :title="carouselAddUpdateTitle" :visible.sync="carouselAddUpdateOpen" width="500px" append-to-body>
-      <el-form ref="form" :model="carouselForm" :rules="rulesCarousel" label-width="80px">
+      <el-form ref="carouselForm" :model="carouselForm" :rules="rulesCarousel" label-width="80px">
         <el-form-item label="图片" prop="imageUrl">
           <image-upload v-model="carouselForm.imageUrl" :limit="1"/>
         </el-form-item>
@@ -252,12 +258,115 @@
         <el-button @click="cancelCarouselAddUpdate">取 消</el-button>
       </div>
     </el-dialog>
+
+
+
+    <!-- 门店视频弹框 -->
+    <el-dialog :title="videoTitle" :visible.sync="videoOpen" width="500px" append-to-body>
+      <el-row :gutter="10" class="mb8">
+        <el-col :span="1.5">
+          <el-button
+            type="primary"
+            plain
+            icon="el-icon-plus"
+            size="mini"
+            @click="handleVideoAdd"
+          >新增</el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button
+            type="success"
+            plain
+            icon="el-icon-edit"
+            size="mini"
+            :disabled="single"
+            @click="handleVideoUpdate"
+          >修改</el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button
+            type="danger"
+            plain
+            icon="el-icon-delete"
+            size="mini"
+            :disabled="single"
+            @click="handleVideoDelete"
+          >删除</el-button>
+        </el-col>
+      </el-row>
+      <el-table v-loading="loading" :data="videoList" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55" align="center" />
+        <el-table-column label="图片" align="center" prop="imageUrl">
+          <template #default="scope">
+            <img :src="scope.row.imageUrl" alt="图片" style="max-width: 100px; max-height: 100px;">
+          </template>
+        </el-table-column>
+        <el-table-column label="视频" align="center" prop="videoUrl">
+          <template #default="scope">
+            <img :src="scope.row.videoUrl" alt="视频" style="max-width: 100px; max-height: 100px;">
+          </template>
+        </el-table-column>
+        <el-table-column label="视频描述" align="center" prop="videoDescribe" />
+        <el-table-column label="视频播放数量" align="center" prop="videoPlay" />
+        <el-table-column label="状态" align="center" prop="status">
+          <template slot-scope="scope">
+            <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="排序" align="center" prop="sortOrder" />
+      </el-table>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelVideo">取 消</el-button>
+      </div>
+      <pagination
+        v-show="totalVideo>0"
+        :total="totalVideo"
+        :page.sync="queryParamsVideo.pageNum"
+        :limit.sync="queryParamsVideo.pageSize"
+        @pagination="getVideoList"
+      />
+    </el-dialog>
+
+    <!-- 添加或修改视频对话框 -->
+    <el-dialog :title="videoAddUpdateTitle" :visible.sync="videoAddUpdateOpen" width="500px" append-to-body>
+      <el-form ref="videoForm" :model="videoForm" :rules="rulesVideo" label-width="80px">
+        <el-form-item label="图片" prop="imageUrl">
+          <image-upload v-model="videoForm.imageUrl" :limit="1"/>
+        </el-form-item>
+        <el-form-item label="门店视频" prop="videoUrl">
+          <image-upload v-model="videoForm.videoUrl" :limit="1"/>
+        </el-form-item>
+        <el-form-item label="视频描述" prop="videoDescribe">
+          <el-input v-model="videoForm.videoDescribe" placeholder="请输入视频描述" />
+        </el-form-item>
+        <el-form-item label="视频播放数量" prop="videoPlay">
+          <el-input v-model="videoForm.videoPlay" placeholder="请输入视频播放数量" />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="videoForm.status">
+            <el-radio
+              v-for="dict in dict.type.sys_normal_disable"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="排序" prop="sortOrder">
+          <el-input-number v-model="videoForm.sortOrder" controls-position="right" :min="0" :value="1" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitFormVideo">确 定</el-button>
+        <el-button @click="cancelVideoAddUpdate">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import { listStore, getStore, delStore, addStore, updateStore } from "@/api/business/store";
 import { addCarousel, delCarousel, getCarousel, listCarousel, updateCarousel } from '@/api/business/carousel'
+import { addVideo, delVideo, getVideo, listVideo, updateVideo } from '@/api/business/video'
 
 let storeIdGlobal = 0;
 
@@ -298,7 +407,14 @@ export default {
       queryParamsCarousel: {
         pageNum: 1,
         pageSize: 10,
-        productId: null,
+      },
+
+      // 总条数
+      totalVideo: 0,
+      // 查询参数
+      queryParamsVideo: {
+        pageNum: 1,
+        pageSize: 10,
       },
       // 表单参数
       form: {},
@@ -333,6 +449,30 @@ export default {
       carouselAddUpdateOpen : false,
       // 表单校验
       rulesCarousel: {
+        imageUrl: [
+          { required: true, message: "图片不能为空", trigger: "blur" }
+        ],
+        sortOrder: [
+          { required: true, message: "排序不能为空", trigger: "blur" }
+        ]
+      },
+
+
+      // 视频表格数据
+      videoList: [],
+
+      videoForm: {},
+      // 视频弹出层标题
+      videoTitle : "",
+      // 视频弹出层
+      videoOpen : false,
+
+      //视频新增修改弹出层标题
+      videoAddUpdateTitle : "",
+      //视频新增修改
+      videoAddUpdateOpen : false,
+      // 表单校验
+      rulesVideo: {
         imageUrl: [
           { required: true, message: "图片不能为空", trigger: "blur" }
         ],
@@ -521,7 +661,7 @@ export default {
     },
 
 
-    /** 查询商品实景图列表 */
+    /** 查询轮播图列表 */
     getCarouselList() {
       this.loading = true;
       const fullData = {
@@ -537,7 +677,7 @@ export default {
 
     /** 提交按钮 */
     submitFormCarousel() {
-      this.$refs["form"].validate(valid => {
+      this.$refs["carouselForm"].validate(valid => {
         if (valid) {
           const fullData = {
             ...this.carouselForm,
@@ -559,6 +699,118 @@ export default {
         }
       });
     },
+
+
+
+    // 视频表单重置
+    resetVideo() {
+      this.videoForm = {
+        id: null,
+        storeId: null,
+        imageUrl: null,
+        videoUrl: null,
+        videoDescribe: null,
+        videoPlay: null,
+        status: "0",
+        sortOrder: 1,
+        createBy: null,
+        createTime: null,
+        updateBy: null,
+        updateTime: null,
+        remark: null
+      };
+      this.resetForm("form");
+    },
+
+    // 视频取消按钮c
+    cancelVideo() {
+      this.videoOpen = false;
+      this.resetVideo();
+    },
+
+    // 视频新增修改取消按钮
+    cancelVideoAddUpdate() {
+      this.videoAddUpdateOpen = false;
+      this.resetVideo();
+    },
+
+
+    /** 视频 */
+    handleVideo(rowStoreId) {
+      storeIdGlobal = rowStoreId;
+      this.videoOpen = true;
+      this.videoTitle = "门店视频";
+      this.getVideoList(storeIdGlobal);
+    },
+
+    /** 视频新增按钮操作 */
+    handleVideoAdd() {
+      this.resetVideo();
+      this.videoAddUpdateOpen = true;
+      this.videoAddUpdateTitle = "添加门店视频";
+    },
+    /** 视频修改按钮操作 */
+    handleVideoUpdate(row) {
+      this.resetVideo();
+      const id = row.id || this.ids
+      getVideo(id).then(response => {
+        this.videoForm = response.data;
+        this.videoAddUpdateOpen = true;
+        this.title = "修改门店视频";
+      });
+    },
+    /** 视频删除按钮操作 */
+    handleVideoDelete(row) {
+      const ids = row.id || this.ids;
+      this.$modal.confirm('是否确认删除视频').then(function() {
+        return delVideo(ids);
+      }).then(() => {
+        this.getVideoList(storeIdGlobal);
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    },
+
+
+    /** 查询视频列表 */
+    getVideoList() {
+      this.loading = true;
+      const fullData = {
+        ...this.queryParamsVideo,
+        storeId: storeIdGlobal
+      };
+      listVideo(fullData).then(response => {
+        this.videoList = response.rows;
+        this.total = response.total;
+        this.loading = false;
+      });
+    },
+
+    /** 提交按钮 */
+    submitFormVideo() {
+      this.$refs["videoForm"].validate(valid => {
+        if (valid) {
+          const fullData = {
+            ...this.videoForm,
+            storeId: storeIdGlobal
+          };
+          if (fullData.id != null) {
+            updateVideo(fullData).then(response => {
+              this.$modal.msgSuccess("修改成功");
+              this.videoAddUpdateOpen = false;
+              this.getVideoList(storeIdGlobal);
+            });
+          } else {
+            addVideo(fullData).then(response => {
+              this.$modal.msgSuccess("新增成功");
+              this.videoAddUpdateOpen = false;
+              this.getVideoList(storeIdGlobal);
+            });
+          }
+        }
+      });
+    },
+
+
   }
 };
 </script>
